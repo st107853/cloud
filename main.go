@@ -56,7 +56,6 @@ func keyValueGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.WriteGet(key)
 	w.Write([]byte(value))
 }
 
@@ -86,30 +85,46 @@ func initializeTransactionLog() error {
 	var err error
 
 	logger, err = NewFileTransactionLogger("transaction.log")
+
+	// logger, err = NewPostgresTransactionLogger(PostgresDbParams{
+	// 	host:     "localhost",
+	// 	dbName:   "template1",
+	// 	user:     "postgres",
+	// 	password: "pass",
+	// })
+
 	if err != nil {
-		return fmt.Errorf("field to create event logger: %w", err)
+		return fmt.Errorf("failed to create transaction logger: %w", err)
 	}
 
 	events, errors := logger.ReadEvents()
-	e, ok := Event{}, true
+	count, ok, e := 0, true, Event{}
 
 	for ok && err == nil {
 		select {
-		case err, ok = <-errors: // Retrieve any errors
+		case err, ok = <-errors:
+
 		case e, ok = <-events:
 			switch e.EventType {
-			case EventDelete: // Got a DELETE event
+			case EventDelete: // Got a DELETE event!
 				err = Delete(e.Key)
-			case EventPut: // Got a PUT event
+				count++
+			case EventPut: // Got a PUT event!
 				err = Put(e.Key, e.Value)
-			case EventGet: // Got a GET event
-				_, err = Get(e.Key)
+				count++
 			}
-
 		}
 	}
 
+	log.Printf("%d events replayed\n", count)
+
 	logger.Run()
+
+	go func() {
+		for err := range logger.Err() {
+			log.Print(err)
+		}
+	}()
 
 	return err
 }
