@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"os"
 )
@@ -14,15 +15,12 @@ type FileTransactionLogger struct {
 }
 
 func (l *FileTransactionLogger) WritePut(key, value string) {
-	l.events <- Event{EventType: EventPut, Key: key, Value: value}
+	val := base64.StdEncoding.EncodeToString([]byte(value))
+	l.events <- Event{EventType: EventPut, Key: key, Value: val}
 }
 
 func (l *FileTransactionLogger) WriteDelete(key string) {
 	l.events <- Event{EventType: EventDelete, Key: key}
-}
-
-func (l *FileTransactionLogger) WriteGet(key string) {
-	l.events <- Event{EventType: EventGet, Key: key}
 }
 
 func (l *FileTransactionLogger) Err() <-chan error {
@@ -73,10 +71,12 @@ func (l *FileTransactionLogger) ReadEvents() (<-chan Event, <-chan error) {
 		for scanner.Scan() {
 			line := scanner.Text()
 			if _, err := fmt.Sscanf(line, "%d\t%d\t%s\t%s",
-				&e.Sequence, &e.EventType, &e.Key, &e.Value); err != nil {
+				&e.Sequence, &e.EventType, &e.Key, &e.Value); err != nil && err.Error() != "EOF" {
 				outError <- fmt.Errorf("input parse error: %w", err)
 				return
 			}
+			temp, _ := base64.StdEncoding.DecodeString(e.Value)
+			e.Value = string(temp)
 			// Sanity check! Are the sequence numbers in increasing order?
 			if l.lastSequence >= e.Sequence {
 				outError <- fmt.Errorf("transaction numbers out of sequence")

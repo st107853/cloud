@@ -13,7 +13,7 @@ type PostgresTransactionLogger struct {
 	db     *sql.DB      // The database access interface
 }
 
-type PostgresDBParams struct {
+type PostgresDbParams struct {
 	dbName   string
 	host     string
 	user     string
@@ -28,16 +28,13 @@ func (l *PostgresTransactionLogger) WriteDelete(key string) {
 	l.events <- Event{EventType: EventDelete, Key: key}
 }
 
-func (l *PostgresTransactionLogger) WriteGet(key string) {
-	l.events <- Event{EventType: EventGet, Key: key}
-}
-
 func (l *PostgresTransactionLogger) Err() <-chan error {
 	return l.errors
 }
 
-func NewPostgresTransactionLogger(config PostgresDBParams) (TransactionLogger,
+func NewPostgresTransactionLogger(config PostgresDbParams) (TransactionLogger,
 	error) {
+
 	connStr := fmt.Sprintf("host=%s dbname=%s user=%s password=%s",
 		config.host, config.dbName, config.user, config.password)
 	db, err := sql.Open("postgres", connStr)
@@ -108,7 +105,7 @@ func (l *PostgresTransactionLogger) Run() {
 	go func() {
 		query := `INSERT INTO transactions
 				(event_type, key, value)
-				VALUE ($1, $2, $3)`
+				VALUES ($1, $2, $3)`
 		for e := range events { // Retrieve the next Event
 			_, err := l.db.Exec( // Execute the INSERT query
 				query, e.EventType, e.Key, e.Value)

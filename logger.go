@@ -4,7 +4,6 @@ const (
 	_                     = iota
 	EventDelete EventType = iota
 	EventPut
-	EventGet
 )
 
 type EventType byte
@@ -12,7 +11,6 @@ type EventType byte
 type TransactionLogger interface {
 	WriteDelete(key string)
 	WritePut(key, value string)
-	WriteGet(key string)
 	Err() <-chan error
 
 	ReadEvents() (<-chan Event, <-chan error)
