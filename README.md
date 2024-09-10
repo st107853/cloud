@@ -1,1 +1,1 @@
-# cloud
+I'm starting out on my learning journey to build reliable services in unreliable environments, following the guidance in Matthew A. Titmus's book, 'Cloud Native Go'. Over time, I'll be sharing the results of my study here.
