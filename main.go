@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 )
@@ -84,14 +85,14 @@ func keyValuePutHandler(w http.ResponseWriter, r *http.Request) {
 func initializeTransactionLog() error {
 	var err error
 
-	logger, err = NewFileTransactionLogger("transaction.log")
+	//logger, err = NewFileTransactionLogger("transaction.log")
 
-	// logger, err = NewPostgresTransactionLogger(PostgresDbParams{
-	// 	host:     "localhost",
-	// 	dbName:   "template1",
-	// 	user:     "postgres",
-	// 	password: "pass",
-	// })
+	logger, err = NewPostgresTransactionLogger(PostgresDbParams{
+		host:     "localhost",
+		dbName:   os.Getenv("DBNAME"),
+		user:     os.Getenv("DBUSER"),
+		password: os.Getenv("DBPASS"),
+	})
 
 	if err != nil {
 		return fmt.Errorf("failed to create transaction logger: %w", err)
