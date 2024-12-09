@@ -5,17 +5,28 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 )
 
 var logger TransactionLogger
 
 func main() {
 
-	err := initializeTransactionLog()
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, nil)))
+
+	// Load the .env file
+	err := godotenv.Load()
+	if err != nil {
+		slog.Error("Error loading .env file")
+	}
+
+	err = initializeTransactionLog()
+
 	if err != nil {
 		panic(err)
 	}
